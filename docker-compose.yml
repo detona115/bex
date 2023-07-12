@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  webapi1:
+    build: API1
+    command:
+      - /bin/bash
+      - -c
+      - |
+        python API1/manage.py migrate
+        python API1/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+
+  webapi2:
+    build: API2
+    command:
+      - /bin/bash
+      - -c
+      - |
+        python API2/manage.py migrate
+        python API2/manage.py runserver 0.0.0.0:8001
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/code
+    ports:
+      - "8001:8001"
+
+  celery:
+    build: API1
+    command: celery -A api1_project worker -l info
+    depends_on:
+      - rabbitmq
+
+  mongodb:
+    image: mongo:6-jammy
+    ports:
+      - "27017:27017"
+    volumes:
+      - dbdata6:/data/db
+
+  rabbitmq:
+    image: rabbitmq:latest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+
+volumes:
+  dbdata6:
+  rabbitmqdata:
+
